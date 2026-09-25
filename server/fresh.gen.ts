@@ -15,6 +15,7 @@ import * as $OpenAllLinks from './islands/OpenAllLinks.tsx';
 import * as $PersistentInput from './islands/PersistentInput.tsx';
 import * as $RegionList from './islands/RegionList.tsx';
 import * as $ReleaseSeeder from './islands/ReleaseSeeder.tsx';
+import * as $SubmitExternalLinks from './islands/SubmitExternalLinks.tsx';
 import { type Manifest } from '$fresh/server.ts';
 
 const manifest = {
@@ -34,6 +35,7 @@ const manifest = {
 		'./islands/PersistentInput.tsx': $PersistentInput,
 		'./islands/RegionList.tsx': $RegionList,
 		'./islands/ReleaseSeeder.tsx': $ReleaseSeeder,
+		'./islands/SubmitExternalLinks.tsx': $SubmitExternalLinks,
 	},
 	baseUrl: import.meta.url,
 } satisfies Manifest;
