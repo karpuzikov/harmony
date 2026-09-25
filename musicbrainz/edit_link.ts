@@ -18,6 +18,32 @@ export interface EntityWithUrlRels extends EntityWithMbid {
 	}>;
 }
 
+export interface EntityWithExternalIdEditLink {
+	entity: ResolvableEntity;
+	mbEditLink: URL;
+}
+
+export function getEditUrlsToSeedExternalLinks(
+	{ entities, entityType, sourceEntityUrl, entityCache, providers }: {
+		entities: ResolvableEntity[];
+		entityType: EntityType;
+		sourceEntityUrl: URL;
+		entityCache?: EntityWithUrlRels[];
+		providers: ProviderRegistry;
+	},
+): EntityWithExternalIdEditLink[] {
+	return entities.flatMap((entity) => {
+		const mbEditLink = getEditUrlToSeedExternalLinks({
+			entity,
+			entityType,
+			sourceEntityUrl,
+			entityCache,
+			providers,
+		});
+		return mbEditLink ? [{ entity, mbEditLink }] : [];
+	});
+}
+
 export function getEditUrlToSeedExternalLinks(
 	{ entity, entityType, sourceEntityUrl, entityCache, providers }: {
 		entity: ResolvableEntity;
