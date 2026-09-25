@@ -1,8 +1,4 @@
-import {
-	type EntityWithUrlRels,
-	getEditUrlsToSeedExternalLinks,
-	getEditUrlToSeedExternalLinks,
-} from './edit_link.ts';
+import { type EntityWithUrlRels, getEditUrlsToSeedExternalLinks, getEditUrlToSeedExternalLinks } from './edit_link.ts';
 import type { EntityId, LinkType, ResolvableEntity } from '@/harmonizer/types.ts';
 import type { EntityType } from '@kellnerd/musicbrainz/data/entity';
 import { describe, it } from '@std/testing/bdd';
