@@ -21,13 +21,14 @@ export function SubmitExternalLinks({ links, scope, label }: {
 		IS_BROWSER && document.documentElement.dataset[helperMarker] === 'ready',
 	);
 	const status = useSignal('');
+	const busy = useSignal(false);
 
 	useEffect(() => {
 		const markReady = () => {
 			helperReady.value = true;
 		};
 		const handleMessage = (event: MessageEvent) => {
-			if (event.source !== window || event.origin !== window.location.origin) return;
+			if (event.origin !== globalThis.location.origin) return;
 			const data = event.data;
 			if (
 				typeof data !== 'object' ||
@@ -40,14 +41,15 @@ export function SubmitExternalLinks({ links, scope, label }: {
 
 			if (data.type === 'harmony-external-id-status' && typeof data.text === 'string') {
 				status.value = data.text;
+				busy.value = data.state === 'running';
 			}
 		};
 
 		document.addEventListener(helperReadyEvent, markReady);
-		window.addEventListener('message', handleMessage);
+		globalThis.addEventListener('message', handleMessage);
 		return () => {
 			document.removeEventListener(helperReadyEvent, markReady);
-			window.removeEventListener('message', handleMessage);
+			globalThis.removeEventListener('message', handleMessage);
 		};
 	}, [scope]);
 
@@ -60,14 +62,15 @@ export function SubmitExternalLinks({ links, scope, label }: {
 	}
 
 	function submitExternalLinks() {
-		if (!helperReady.value) return;
+		if (!helperReady.value || busy.value) return;
+		busy.value = true;
 		status.value = `Starting 0/${links.length}...`;
-		window.postMessage({
+		globalThis.postMessage({
 			source: 'harmony',
 			type: 'harmony-submit-external-id-edits',
 			scope,
 			links,
-		}, window.location.origin);
+		}, globalThis.location.origin);
 	}
 
 	return (
@@ -79,6 +82,7 @@ export function SubmitExternalLinks({ links, scope, label }: {
 						? (
 							<Button
 								class='open-all-links'
+								disabled={busy.value}
 								onClick={submitExternalLinks}
 								title={`Submit ${links.length} MusicBrainz external ID edit${links.length === 1 ? '' : 's'}`}
 							>
