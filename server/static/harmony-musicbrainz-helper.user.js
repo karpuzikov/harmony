@@ -12,6 +12,8 @@
 // @run-at       document-idle
 // ==/UserScript==
 
+// deno-lint-ignore-file no-undef
+
 (() => {
 	'use strict';
 
@@ -71,7 +73,9 @@
 
 	function relayStatusToHarmony() {
 		const queue = readQueue();
-		if (!queue || queue.sourceOrigin !== location.origin) return;
+		if (!queue || queue.sourceOrigin !== globalThis.location.origin) return;
+		const currentPage = `${globalThis.location.origin}${globalThis.location.pathname}${globalThis.location.search}`;
+		if (queue.sourcePage !== currentPage) return;
 
 		const total = queue.items?.length || 0;
 		let text = '';
@@ -87,20 +91,21 @@
 		}
 
 		if (!text) return;
-		window.postMessage({
+		globalThis.postMessage({
 			source: 'harmony-musicbrainz-helper',
 			type: 'harmony-external-id-status',
 			scope: queue.scope,
+			state: queue.status,
 			text,
-		}, location.origin);
+		}, globalThis.location.origin);
 	}
 
 	function runHarmonySide() {
 		announceReady();
 		setInterval(relayStatusToHarmony, 350);
 
-		window.addEventListener('message', (event) => {
-			if (event.source !== window || event.origin !== location.origin) return;
+		globalThis.addEventListener('message', (event) => {
+			if (event.origin !== globalThis.location.origin) return;
 			const data = event.data;
 			if (
 				typeof data !== 'object' ||
@@ -127,6 +132,18 @@
 
 			if (!items.length) return;
 
+			const existingQueue = readQueue();
+			if (existingQueue?.status === 'running') {
+				globalThis.postMessage({
+					source: 'harmony-musicbrainz-helper',
+					type: 'harmony-external-id-status',
+					scope: data.scope,
+					state: 'blocked',
+					text: 'Another external-ID submission is already running.',
+				}, globalThis.location.origin);
+				return;
+			}
+
 			const scope = data.scope === 'all' || allowedTypes.has(data.scope)
 				? data.scope
 				: 'all';
@@ -140,7 +157,8 @@
 				succeeded: 0,
 				failed: 0,
 				fatalError: '',
-				sourceOrigin: location.origin,
+				sourceOrigin: globalThis.location.origin,
+				sourcePage: `${globalThis.location.origin}${globalThis.location.pathname}${globalThis.location.search}`,
 				startedAt: Date.now(),
 				updatedAt: Date.now(),
 			});
@@ -155,7 +173,7 @@
 	}
 
 	function getBridgeJobId() {
-		return new URL(location.href).searchParams.get(bridgeParam) || '';
+		return new URL(globalThis.location.href).searchParams.get(bridgeParam) || '';
 	}
 
 	function setBridgeStatus(text, isError = false) {
@@ -400,12 +418,12 @@
 		}
 
 		setBridgeStatus(`Finished: ${queue.succeeded}/${queue.items.length} submitted.`);
-		setTimeout(() => window.close(), 750);
+		setTimeout(() => globalThis.close(), 750);
 	}
 
-	if (location.hostname === 'harmony.pulsewidth.org.uk') {
+	if (globalThis.location.hostname === 'harmony.pulsewidth.org.uk') {
 		runHarmonySide();
-	} else if (location.hostname === 'musicbrainz.org' && getBridgeJobId()) {
+	} else if (globalThis.location.hostname === 'musicbrainz.org' && getBridgeJobId()) {
 		runBridge().catch((error) => {
 			const queue = readQueue();
 			if (queue) {
