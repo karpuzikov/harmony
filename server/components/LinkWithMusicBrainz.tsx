@@ -2,6 +2,7 @@ import { LinkedEntity } from './LinkedEntity.tsx';
 import { MessageBox } from './MessageBox.tsx';
 import { SpriteIcon } from './SpriteIcon.tsx';
 import { OpenAllLinks } from '@/server/islands/OpenAllLinks.tsx';
+import { SubmitExternalLinks } from '@/server/islands/SubmitExternalLinks.tsx';
 
 import type { EntityType } from '@kellnerd/musicbrainz/data/entity';
 import { type EntityWithUrlRels, getEditUrlToSeedExternalLinks } from '@/musicbrainz/edit_link.ts';
@@ -32,6 +33,7 @@ export function LinkWithMusicBrainz({ entities, entityType, sourceEntityUrl, ent
 	if (entitiesWithMbEditLinks.length === 0) return null;
 
 	const existingLinksNotChecked = !entityCache?.length;
+	const editLinks = entitiesWithMbEditLinks.map(({ mbEditLink }) => mbEditLink.href);
 	const actions = entitiesWithMbEditLinks.map(({ entity, mbEditLink }) => (
 		<LinkWithMusicBrainzAction
 			mbEditLink={mbEditLink}
@@ -39,28 +41,33 @@ export function LinkWithMusicBrainz({ entities, entityType, sourceEntityUrl, ent
 			entityType={entityType}
 		/>
 	));
-	if (actions.length > 1 || existingLinksNotChecked) {
-		return (
-			<div class='action-group'>
-				<OpenAllLinks
-					links={entitiesWithMbEditLinks.map(({ mbEditLink }) => mbEditLink.href)}
-					linkType={entityType}
+	const oneClickLabel = entityType === 'recording'
+		? 'Link song external IDs in one click'
+		: `Link ${entityType} external IDs in one click`;
+
+	return (
+		<div class='action-group'>
+			<SubmitExternalLinks
+				links={editLinks}
+				scope={entityType}
+				label={oneClickLabel}
+			/>
+			<OpenAllLinks
+				links={editLinks}
+				linkType={entityType}
+			/>
+			{existingLinksNotChecked && (
+				<MessageBox
+					message={{
+						type: 'warning',
+						text:
+							`Already existing ${entityType} links on MusicBrainz could not be checked. There may be no new external IDs to add.`,
+					}}
 				/>
-				{existingLinksNotChecked && (
-					<MessageBox
-						message={{
-							type: 'warning',
-							text:
-								`Already existing ${entityType} links on MusicBrainz could not be checked. There may be no new external IDs to add.`,
-						}}
-					/>
-				)}
-				{actions}
-			</div>
-		);
-	} else {
-		return actions[0];
-	}
+			)}
+			{actions}
+		</div>
+	);
 }
 
 function LinkWithMusicBrainzAction({ mbEditLink, entity, entityType }: {
