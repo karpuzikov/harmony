@@ -17,6 +17,15 @@ export function SubmitExternalLinks({ links, scope, label }: {
 	scope: ExternalIdSubmissionScope;
 	label: string;
 }) {
+	const supportedLinks = links.filter((link) => {
+		try {
+			const url = new URL(link);
+			return url.origin === 'https://musicbrainz.org' &&
+				/^\/(artist|label|recording)\/[0-9a-f-]{36}\/edit$/i.test(url.pathname);
+		} catch {
+			return false;
+		}
+	});
 	const helperReady = useSignal(
 		IS_BROWSER && document.documentElement.dataset[helperMarker] === 'ready',
 	);
@@ -53,7 +62,7 @@ export function SubmitExternalLinks({ links, scope, label }: {
 		};
 	}, [scope]);
 
-	if (!links.length) return null;
+	if (!supportedLinks.length) return null;
 
 	// Only the global control shows the helper installation prompt. The
 	// type-specific controls stay hidden until the helper is available.
@@ -64,12 +73,12 @@ export function SubmitExternalLinks({ links, scope, label }: {
 	function submitExternalLinks() {
 		if (!helperReady.value || busy.value) return;
 		busy.value = true;
-		status.value = `Starting 0/${links.length}...`;
+		status.value = `Starting 0/${supportedLinks.length}...`;
 		globalThis.postMessage({
 			source: 'harmony',
 			type: 'harmony-submit-external-id-edits',
 			scope,
-			links,
+			links: supportedLinks,
 		}, globalThis.location.origin);
 	}
 
@@ -84,7 +93,7 @@ export function SubmitExternalLinks({ links, scope, label }: {
 								class='open-all-links'
 								disabled={busy.value}
 								onClick={submitExternalLinks}
-								title={`Submit ${links.length} MusicBrainz external ID edit${links.length === 1 ? '' : 's'}`}
+								title={`Submit ${supportedLinks.length} MusicBrainz external ID edit${supportedLinks.length === 1 ? '' : 's'}`}
 							>
 								{label}
 							</Button>
