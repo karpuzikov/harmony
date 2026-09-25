@@ -9,7 +9,7 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_openInTab
-// @run-at       document-start
+// @run-at       document-idle
 // ==/UserScript==
 
 (() => {
