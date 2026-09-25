@@ -27,7 +27,7 @@ export function SubmitExternalLinks({ links, scope, label }: {
 			helperReady.value = true;
 		};
 		const handleMessage = (event: MessageEvent) => {
-			if (event.source !== globalThis || event.origin !== globalThis.location.origin) return;
+			if (event.source !== window || event.origin !== window.location.origin) return;
 			const data = event.data;
 			if (
 				typeof data !== 'object' ||
@@ -44,10 +44,10 @@ export function SubmitExternalLinks({ links, scope, label }: {
 		};
 
 		document.addEventListener(helperReadyEvent, markReady);
-		globalThis.addEventListener('message', handleMessage);
+		window.addEventListener('message', handleMessage);
 		return () => {
 			document.removeEventListener(helperReadyEvent, markReady);
-			globalThis.removeEventListener('message', handleMessage);
+			window.removeEventListener('message', handleMessage);
 		};
 	}, [scope]);
 
@@ -62,12 +62,12 @@ export function SubmitExternalLinks({ links, scope, label }: {
 	function submitExternalLinks() {
 		if (!helperReady.value) return;
 		status.value = `Starting 0/${links.length}...`;
-		globalThis.postMessage({
+		window.postMessage({
 			source: 'harmony',
 			type: 'harmony-submit-external-id-edits',
 			scope,
 			links,
-		}, globalThis.location.origin);
+		}, window.location.origin);
 	}
 
 	return (
