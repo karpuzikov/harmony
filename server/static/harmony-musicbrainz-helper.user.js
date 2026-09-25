@@ -2,7 +2,7 @@
 // @name         Harmony - MusicBrainz One-Click External ID Helper
 // @namespace    https://harmony.pulsewidth.org.uk/
 // @version      1.0.0
-// @description  Lets Harmony submit seeded MusicBrainz external-ID edits quickly through one authenticated MusicBrainz bridge tab.
+// @description  Fast one-click submission of Harmony external-ID edits through MusicBrainz.
 // @license      MIT
 // @match        https://harmony.pulsewidth.org.uk/release/actions*
 // @match        https://musicbrainz.org/*
@@ -12,7 +12,6 @@
 // @run-at       document-idle
 // ==/UserScript==
 
-// deno-lint-ignore-file no-undef
 
 (() => {
 	'use strict';
@@ -23,12 +22,12 @@
 	const allowedTypes = new Set(['artist', 'label', 'recording']);
 
 	function readQueue() {
-		return GM_getValue(queueKey, null);
+		return globalThis.GM_getValue(queueKey, null);
 	}
 
 	function writeQueue(queue) {
 		queue.updatedAt = Date.now();
-		GM_setValue(queueKey, queue);
+		globalThis.GM_setValue(queueKey, queue);
 	}
 
 	function parseEditLink(rawUrl) {
@@ -164,7 +163,7 @@
 			});
 
 			relayStatusToHarmony();
-			GM_openInTab(bridgeUrl(jobId), {
+			globalThis.GM_openInTab(bridgeUrl(jobId), {
 				active: false,
 				insert: true,
 				setParent: true,
