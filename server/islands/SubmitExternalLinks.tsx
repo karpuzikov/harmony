@@ -53,6 +53,12 @@ export function SubmitExternalLinks({ links, scope, label }: {
 
 	if (!links.length) return null;
 
+	// Only the global control shows the helper installation prompt. The
+	// type-specific controls stay hidden until the helper is available.
+	if (!helperReady.value && scope !== 'all') {
+		return <span hidden data-external-id-helper-placeholder />;
+	}
+
 	function submitExternalLinks() {
 		if (!helperReady.value) return;
 		status.value = `Starting 0/${links.length}...`;
