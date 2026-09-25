@@ -1,4 +1,8 @@
-import { type EntityWithUrlRels, getEditUrlToSeedExternalLinks } from './edit_link.ts';
+import {
+	type EntityWithUrlRels,
+	getEditUrlsToSeedExternalLinks,
+	getEditUrlToSeedExternalLinks,
+} from './edit_link.ts';
 import type { EntityId, LinkType, ResolvableEntity } from '@/harmonizer/types.ts';
 import type { EntityType } from '@kellnerd/musicbrainz/data/entity';
 import { describe, it } from '@std/testing/bdd';
@@ -153,6 +157,28 @@ describe('getEditUrlToSeedExternalLinks', () => {
 		assertEquals(searchParams.get('edit-artist.url.0.link_type_id'), null); // No link type
 		assertEquals(searchParams.get('edit-artist.url.1.text'), null);
 		assertEquals(searchParams.get('edit-artist.url.1.link_type_id'), null);
+	});
+
+	it('returns batch edit links only for entities with pending external IDs', () => {
+		const entities: ResolvableEntity[] = [
+			{
+				mbid: 'mbid-8',
+				externalIds: [{ type: '', provider: 'test', id: '7', linkTypes: ['free download'] }],
+			},
+			{
+				mbid: 'mbid-9',
+				externalIds: [],
+			},
+		];
+		const links = getEditUrlsToSeedExternalLinks({
+			entities,
+			entityType,
+			sourceEntityUrl,
+			providers: mockProviders,
+		});
+		assertEquals(links.length, 1);
+		assertEquals(links[0].entity.mbid, 'mbid-8');
+		assertEquals(links[0].mbEditLink.pathname, '/artist/mbid-8/edit');
 	});
 
 	it('returns null if no new external links after filtering', () => {
