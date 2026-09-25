@@ -2,6 +2,7 @@ import { ArtistCredit } from '@/server/components/ArtistCredit.tsx';
 import { CoverImage } from '@/server/components/CoverImage.tsx';
 import { ISRCSubmission } from '@/server/components/ISRCSubmission.tsx';
 import { LinkWithMusicBrainz } from '@/server/components/LinkWithMusicBrainz.tsx';
+import { SubmitExternalLinks } from '@/server/islands/SubmitExternalLinks.tsx';
 import { MBIDInput } from '@/server/components/MBIDInput.tsx';
 import { ErrorMessageBox, MessageBox } from '@/server/components/MessageBox.tsx';
 import { ProviderList } from '@/server/components/ProviderList.tsx';
@@ -31,7 +32,7 @@ import { Head } from 'fresh/runtime.ts';
 import { defineRoute } from 'fresh/server.ts';
 import { getLogger } from 'std/log/get_logger.ts';
 import { join } from 'std/url/join.ts';
-import type { EntityWithUrlRels } from '@/musicbrainz/edit_link.ts';
+import { getEditUrlsToSeedExternalLinks, type EntityWithUrlRels } from '@/musicbrainz/edit_link.ts';
 
 export default defineRoute(async (req, ctx) => {
 	const errors: Error[] = [];
@@ -144,6 +145,39 @@ export default defineRoute(async (req, ctx) => {
 		}
 	}
 
+	const artistExternalIdEditLinks = releaseUrl
+		? getEditUrlsToSeedExternalLinks({
+			entities: allArtists,
+			entityType: 'artist',
+			sourceEntityUrl: releaseUrl,
+			entityCache: mbArtists,
+			providers: providerRegistry,
+		}).map(({ mbEditLink }) => mbEditLink.href)
+		: [];
+	const labelExternalIdEditLinks = releaseUrl && release?.labels
+		? getEditUrlsToSeedExternalLinks({
+			entities: release.labels,
+			entityType: 'label',
+			sourceEntityUrl: releaseUrl,
+			entityCache: mbLabels,
+			providers: providerRegistry,
+		}).map(({ mbEditLink }) => mbEditLink.href)
+		: [];
+	const recordingExternalIdEditLinks = releaseUrl
+		? getEditUrlsToSeedExternalLinks({
+			entities: allRecordings,
+			entityType: 'recording',
+			sourceEntityUrl: releaseUrl,
+			entityCache: mbRecordings,
+			providers: providerRegistry,
+		}).map(({ mbEditLink }) => mbEditLink.href)
+		: [];
+	const allExternalIdEditLinks = [
+		...artistExternalIdEditLinks,
+		...labelExternalIdEditLinks,
+		...recordingExternalIdEditLinks,
+	];
+
 	const title = release?.title ?? 'Release Actions';
 	return (
 		<>
@@ -198,6 +232,13 @@ export default defineRoute(async (req, ctx) => {
 						release={release}
 						targetMbid={releaseMbid}
 						recordingsCache={mbRecordings}
+					/>
+				)}
+				{allExternalIdEditLinks.length > 0 && (
+					<SubmitExternalLinks
+						links={allExternalIdEditLinks}
+						scope='all'
+						label='Link external IDs in one click'
 					/>
 				)}
 				{releaseUrl && (
